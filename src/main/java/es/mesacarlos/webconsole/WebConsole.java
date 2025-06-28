@@ -9,7 +9,7 @@ import fi.iki.elonen.NanoHTTPD;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
@@ -50,7 +50,10 @@ public class WebConsole implements ModInitializer {
 		Internationalization.setCurrentLocale(WCConfig.getInstance().getLanguage());
 
 		// Register command
-		CommandRegistrationCallback.EVENT.register(WebConsoleCommand::register);
+		// Temporarily disabled due to CommandRegistryAccess issues
+		// CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+		//	WebConsoleCommand.register(dispatcher, registryAccess, environment);
+		// });
 
 		// On Server Start
 		ServerLifecycleEvents.SERVER_STARTING.register(mcServer -> {

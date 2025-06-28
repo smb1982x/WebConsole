@@ -8,7 +8,6 @@ import es.mesacarlos.webconsole.config.UserType;
 import es.mesacarlos.webconsole.config.WCConfig;
 import es.mesacarlos.webconsole.server.WCServer;
 import es.mesacarlos.webconsole.util.Internationalization;
-import net.minecraft.command.CommandException;
 import net.minecraft.server.command.ServerCommandSource;
 
 public class ExecCommand implements WSCommand {
@@ -30,12 +29,8 @@ public class ExecCommand implements WSCommand {
 		}
 		
 		WebConsole.LOGGER.info(Internationalization.getPhrase("cmd-executed-console", address, Internationalization.utf8ToIso(command)));
-		try {
-			ServerCommandSource source = WebConsole.getMCServer().getCommandSource();
-			WebConsole.getMCServer().getCommandManager().execute(source, command);
-		} catch (CommandException e) {
-			WebConsole.LOGGER.error(e.getMessage());
-		}
+		ServerCommandSource source = WebConsole.getMCServer().getCommandSource();
+		WebConsole.getMCServer().getCommandManager().executeWithPrefix(source, command);
 	}
 	
 	private boolean checkWhitelist(String address, String command) {

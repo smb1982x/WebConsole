@@ -14,6 +14,11 @@
 		<link rel="stylesheet" type="text/css" href="styles/WebConsole.css">
 		
 		<title>WebConsole</title>
+		
+		<!-- Minimal customization via inline styles -->
+		<style id="webconsole-custom">
+			/* Will be populated by server */
+		</style>
 	</head>
 	<body class="d-flex flex-column h-100">
 		<header>
@@ -100,7 +105,6 @@
 									<span id="loggedUsernameLabel">Unknown</span>
 									(<span id="loggedUserTypeLabel">Unknown</span>)
 								</p>
-								<button type="button" class="btn btn-danger btn-sm" id="deleteServerButton">Delete server</button>
 							</div>
 						</div>
 					</div>
@@ -204,8 +208,8 @@
 		
 		<!-- Webpage footer -->
 		<footer class="footer mt-auto py-3">
-			<div class="container">
-				<span class="text-muted">WebConsole v2.3 - <a href="https://github.com/mesacarlos/WebConsole">GitHub</a></span>
+			<div class="container text-center">
+				<span class="text-muted" id="footerTextElement">WebConsole</span>
 			</div>
 		</footer>
 		
@@ -225,5 +229,109 @@
 		<script src="scripts/WebConsolePersistenceManager.js?v=2.2.0"></script>
 		<script src="scripts/WebConsole.js?v=2.2.0"></script>
 		<script src="scripts/WebConsoleJqueryHandler.js?v=2.2.0"></script>
+		<script src="scripts/WebConsoleCustomization.js?v=2.4.0"></script>
+		
+		<!-- Modern auto-scroll and customization -->
+		<script>
+		// Modern auto-scroll implementation
+		window.webConsoleAutoScroll = {
+			enabled: true,
+			
+			// Check if console is scrolled to bottom (within threshold)
+			isAtBottom: function() {
+				const console = document.getElementById('consoleTextArea');
+				if (!console) return false;
+				return Math.abs(console.scrollHeight - console.scrollTop - console.clientHeight) < 50;
+			},
+			
+			// Scroll to bottom
+			scrollToBottom: function() {
+				const console = document.getElementById('consoleTextArea');
+				if (console) {
+					// Account for padding - scroll to position that shows last line properly
+					const paddingBottom = parseInt(window.getComputedStyle(console).paddingBottom) || 16;
+					console.scrollTop = console.scrollHeight - console.clientHeight + paddingBottom;
+				}
+			},
+			
+			// Setup auto-scroll observer
+			setup: function() {
+				const console = document.getElementById('consoleTextArea');
+				if (!console) return;
+				
+				// Use MutationObserver to detect new content
+				const observer = new MutationObserver(function(mutations) {
+					let shouldScroll = false;
+					
+					mutations.forEach(function(mutation) {
+						if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+							// Check if user was at bottom before new content
+							shouldScroll = webConsoleAutoScroll.isAtBottom();
+						}
+					});
+					
+					if (shouldScroll && webConsoleAutoScroll.enabled) {
+						setTimeout(function() {
+							webConsoleAutoScroll.scrollToBottom();
+						}, 10);
+					}
+				});
+				
+				observer.observe(console, {
+					childList: true,
+					subtree: true
+				});
+				
+				// Manual scroll detection to disable auto-scroll when user scrolls up
+				console.addEventListener('scroll', function() {
+					if (!webConsoleAutoScroll.isAtBottom()) {
+						webConsoleAutoScroll.enabled = false;
+						// Re-enable after 5 seconds of no manual scrolling
+						clearTimeout(webConsoleAutoScroll.timeout);
+						webConsoleAutoScroll.timeout = setTimeout(function() {
+							webConsoleAutoScroll.enabled = true;
+						}, 5000);
+					} else {
+						webConsoleAutoScroll.enabled = true;
+					}
+				});
+			}
+		};
+		
+		// Wait for page to load
+		window.addEventListener('load', function() {
+			setTimeout(function() {
+				// Setup auto-scroll
+				webConsoleAutoScroll.setup();
+				
+				// Apply customizations
+				fetch('/settings.json')
+					.then(response => response.json())
+					.then(settings => {
+						if (settings.pageTitle) {
+							document.title = settings.pageTitle;
+						}
+						
+						const brandElement = document.getElementById('navbarBrandLink');
+						if (brandElement && settings.brandingText) {
+							brandElement.textContent = settings.brandingText;
+						}
+						
+						const styleElement = document.getElementById('webconsole-custom');
+						if (styleElement && settings.consoleBackgroundColor) {
+							styleElement.textContent = `
+								#consoleTextArea.console {
+									background-color: ${settings.consoleBackgroundColor} !important;
+									color: ${settings.consoleTextColor} !important;
+									font-family: "${settings.consoleFontFamily}" !important;
+									font-size: ${settings.consoleFontSize} !important;
+								}
+							`;
+						}
+					})
+					.catch(error => console.log('Customization not available'));
+			}, 500);
+		});
+		</script>
 	</body>
 </html>

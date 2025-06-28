@@ -25,10 +25,10 @@
     "webconsole.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.11.3",
+    "fabricloader": ">=0.16.0",
     "fabric": "*",
-    "minecraft": "1.18.x",
-    "cloth-config": ">=6.1.48",
-    "java": ">=17"
+    "minecraft": "~1.21.6",
+    "cloth-config": ">=19.0.147",
+    "java": ">=21"
   }
 }

@@ -46,21 +46,23 @@ class WebServer extends NanoHTTPD {
             updateServer();
         }
 
-        // Create settings file
-        Files.deleteIfExists(settingsFile.toPath());
-        JsonObject settingsJson = new JsonObject();
-        settingsJson.addProperty("revision", WCConstants.CLIENT_REVISION);
-        settingsJson.addProperty("ssl", WCConfig.getInstance().isSslEnabled());
-        settingsJson.addProperty("port", WCConfig.getInstance().socketPort);
-        settingsJson.addProperty("host", "local");
-        BufferedWriter bw = new BufferedWriter(new FileWriter(settingsFile));
-        bw.write(settingsJson.toString());
-        bw.close();
+        // Settings are now served dynamically - no static file needed
     }
 
     @Override
     public Response serve(IHTTPSession session) {
         if (session.getMethod() == Method.GET) {
+            // Handle language API endpoint
+            if (session.getUri().startsWith("/api/language/")) {
+                String language = session.getUri().substring("/api/language/".length());
+                return newFixedLengthResponse(Response.Status.OK, "application/json", getLanguageJson(language));
+            }
+            
+            // Handle settings endpoint - serve live config instead of static file
+            if (session.getUri().equals("/settings.json")) {
+                return newFixedLengthResponse(Response.Status.OK, "application/json", getLiveSettingsJson());
+            }
+            
             String path = WEB_PATH + session.getUri();
             if (session.getUri().equals("/")) {
                 path += "index.html";
@@ -119,5 +121,85 @@ class WebServer extends NanoHTTPD {
             ex.printStackTrace();
         }
         return sb.toString();
+    }
+
+    private static String getLanguageJson(String language) {
+        // Try to read custom language file first
+        File languageFile = new File(WEB_PATH, "lang/" + language + ".json");
+        if (languageFile.exists()) {
+            return readFile(languageFile.getAbsolutePath());
+        }
+        
+        // Return default English language strings
+        JsonObject defaultLang = new JsonObject();
+        defaultLang.addProperty("language", "Language");
+        defaultLang.addProperty("settings", "Settings");
+        defaultLang.addProperty("players_online", "Players Online");
+        defaultLang.addProperty("cpu_title", "CPU");
+        defaultLang.addProperty("ram_title", "RAM");
+        defaultLang.addProperty("user_title", "Logged as");
+        defaultLang.addProperty("delete_server_button", "Delete server");
+        defaultLang.addProperty("password_required", "Password required");
+        defaultLang.addProperty("password_label", "Password:");
+        defaultLang.addProperty("remember_password", "Remember password");
+        defaultLang.addProperty("close", "Close");
+        defaultLang.addProperty("login", "Login");
+        defaultLang.addProperty("disconnected", "Disconnected");
+        defaultLang.addProperty("disconnection_description", "Connection was lost with the server. This can be caused by:");
+        defaultLang.addProperty("disconnection_sub1", "Server was closed intentionally.");
+        defaultLang.addProperty("disconnection_sub2", "Port is not opened on your host. In this case, troubleshoot using this tool and recheck your firewall or router.");
+        defaultLang.addProperty("welcome_screen", "Welcome screen");
+        defaultLang.addProperty("webconsole_settings", "WebConsole Settings");
+        defaultLang.addProperty("show_date_setting", "Show date and time on each console line");
+        defaultLang.addProperty("read_log_file_setting", "Retrieve full log file from server after login");
+        defaultLang.addProperty("done", "Done");
+        defaultLang.addProperty("send", "Send");
+        
+        return defaultLang.toString();
+    }
+    
+    /**
+     * Generate settings JSON dynamically from current configuration
+     */
+    private static String getLiveSettingsJson() {
+        JsonObject settingsJson = new JsonObject();
+        settingsJson.addProperty("revision", WCConstants.CLIENT_REVISION);
+        settingsJson.addProperty("ssl", WCConfig.getInstance().isSslEnabled());
+        settingsJson.addProperty("port", WCConfig.getInstance().socketPort);
+        settingsJson.addProperty("host", "local");
+        
+        // Add web interface customization settings - live from config
+        settingsJson.addProperty("pageTitle", WCConfig.getInstance().getPageTitle());
+        settingsJson.addProperty("brandingText", WCConfig.getInstance().getBrandingText());
+        settingsJson.addProperty("logoImagePath", WCConfig.getInstance().getLogoImagePath());
+        settingsJson.addProperty("consoleBackgroundColor", WCConfig.getInstance().getConsoleBackgroundColor());
+        settingsJson.addProperty("consoleTextColor", WCConfig.getInstance().getConsoleTextColor());
+        settingsJson.addProperty("consoleFontFamily", WCConfig.getInstance().getConsoleFontFamily());
+        settingsJson.addProperty("consoleFontSize", WCConfig.getInstance().getConsoleFontSize());
+        settingsJson.addProperty("pageBackgroundColor", WCConfig.getInstance().getPageBackgroundColor());
+        settingsJson.addProperty("navbarBackgroundColor", WCConfig.getInstance().getNavbarBackgroundColor());
+        settingsJson.addProperty("cardBackgroundColor", WCConfig.getInstance().getCardBackgroundColor());
+        settingsJson.addProperty("cardTextColor", WCConfig.getInstance().getCardTextColor());
+        settingsJson.addProperty("navbarTextColor", WCConfig.getInstance().getNavbarTextColor());
+        settingsJson.addProperty("buttonTextColor", WCConfig.getInstance().getButtonTextColor());
+        settingsJson.addProperty("buttonBackgroundColor", WCConfig.getInstance().getButtonBackgroundColor());
+        settingsJson.addProperty("sendButtonText", WCConfig.getInstance().getSendButtonText());
+        settingsJson.addProperty("inputTextColor", WCConfig.getInstance().getInputTextColor());
+        settingsJson.addProperty("inputBackgroundColor", WCConfig.getInstance().getInputBackgroundColor());
+        settingsJson.addProperty("modalTextColor", WCConfig.getInstance().getModalTextColor());
+        settingsJson.addProperty("modalBackgroundColor", WCConfig.getInstance().getModalBackgroundColor());
+        settingsJson.addProperty("linkTextColor", WCConfig.getInstance().getLinkTextColor());
+        settingsJson.addProperty("footerText", WCConfig.getInstance().getFooterText());
+        settingsJson.addProperty("footerTextColor", WCConfig.getInstance().getFooterTextColor());
+        settingsJson.addProperty("consoleTitleText", WCConfig.getInstance().getConsoleTitleText());
+        settingsJson.addProperty("consoleTitleColor", WCConfig.getInstance().getConsoleTitleColor());
+        settingsJson.addProperty("progressBarBackgroundColor", WCConfig.getInstance().getProgressBarBackgroundColor());
+        settingsJson.addProperty("progressBarForegroundColor", WCConfig.getInstance().getProgressBarForegroundColor());
+        settingsJson.addProperty("scrollbarTrackColor", WCConfig.getInstance().getScrollbarTrackColor());
+        settingsJson.addProperty("scrollbarThumbColor", WCConfig.getInstance().getScrollbarThumbColor());
+        settingsJson.addProperty("inputBorderColor", WCConfig.getInstance().getInputBorderColor());
+        settingsJson.addProperty("buttonBorderColor", WCConfig.getInstance().getButtonBorderColor());
+        
+        return settingsJson.toString();
     }
 }

@@ -4,5 +4,5 @@ public class WCConstants {
 
     private WCConstants() {}
 
-    public static final int CLIENT_REVISION = 2;
+    public static final int CLIENT_REVISION = 13;
 }

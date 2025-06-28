@@ -10,14 +10,15 @@ import net.minecraft.server.command.ServerCommandSource;
 import es.mesacarlos.webconsole.auth.LoginManager;
 import es.mesacarlos.webconsole.auth.ConnectedUser;
 import es.mesacarlos.webconsole.util.Internationalization;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 
 import static net.minecraft.server.command.CommandManager.literal;
+import net.minecraft.server.command.CommandManager;
 
 
 public class WebConsoleCommand {
 
-	public static void register(CommandDispatcher<ServerCommandSource> dispatcher, boolean isDedicated) {
+	public static void register(CommandDispatcher<ServerCommandSource> dispatcher, Object registryAccess, Object environment) {
 		dispatcher.register(literal("WebConsole")
 				.executes(context -> {
 					String version = FabricLoader.getInstance().getModContainer(WebConsole.MODID).get().getMetadata().getVersion().getFriendlyString();
@@ -35,7 +36,7 @@ public class WebConsoleCommand {
 								msg.append("\n");
 						}
 					}
-					context.getSource().sendFeedback(new LiteralText(msg.toString()), false);
+					context.getSource().sendFeedback(() -> Text.literal(msg.toString()), false);
 					return Command.SINGLE_SUCCESS;
 				}));
 	}
