@@ -1,3 +1,8 @@
+# Updated to Minecraft 1.21.6 and Fabric 128.x
+
+- Added color and text customisation
+- optimised a few parts of the code
+
 # WebConsole - Remote Minecraft Server Administration
 
 [![License](https://img.shields.io/badge/license-CC0--1.0-blue.svg)](LICENSE)
